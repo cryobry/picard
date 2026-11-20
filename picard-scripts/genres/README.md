@@ -1,12 +1,13 @@
 # Standardize genres in MusicBrainz Picard
 
-Map MusicBrainz genres to consistent labels and write the result to every track in a matched release. This setup uses Picard 3.0.5 and the three files below.
+Map MusicBrainz genres to consistent labels and write the result to every track in a matched release. This setup uses Picard 3.0.5 and the files below.
 
 | File | Where it goes |
 | --- | --- |
 | [genre-mapper-rules.txt](./genre-mapper-rules.txt) | Paste into **Options → Plugins → Genre Mapper → Replacement Pairs**. |
 | [Configure Genres.ptsp](./Configure%20Genres.ptsp) | Import in **Options → Scripting**. Edit its settings to change buckets, aliases, and preferences. |
 | [Standardize Genres.ptsp](./Standardize%20Genres.ptsp) | Import in **Options → Scripting** and run after **Configure Genres**. |
+| [Clear Artist Genre Cache.ptsp](./Clear%20Artist%20Genre%20Cache.ptsp) | Optional: run on selected releases before refreshing to clear cached artist results. |
 
 ## 1. Install plugins
 
@@ -28,7 +29,7 @@ Open **Options → Options… → Plugins → Install Plugin…** and install th
 
 1. In **Options → Scripting**, enable **Enable Tagger Script(s)** and import both `.ptsp` files. Disable older copies when updating.
 2. Enable both scripts and put **Configure Genres** above **Standardize Genres**. Picard runs the plugins first, then Configure Genres across the tracks, then Standardize Genres. [Scripting](https://picard-docs.musicbrainz.org/en/v3.0/config/options_scripting.html) · [Processing order](https://picard-docs.musicbrainz.org/en/v3.0/extending/processing.html)
-3. Match a release. Use **Refresh** after edits, then check **Original Value** and **New Value** for **Genre** before saving. [Metadata pane](https://picard-docs.musicbrainz.org/en/v3.0/getting_started/metadata_pane.html)
+3. Match a release. After changing artist genre rules, run **Clear Artist Genre Cache** on the selected release, then use **Refresh** so the new rules are applied. Check **Original Value** and **New Value** for **Genre** before saving. [Metadata pane](https://picard-docs.musicbrainz.org/en/v3.0/getting_started/metadata_pane.html)
 
 ### How the final genre list is chosen
 
@@ -61,10 +62,6 @@ Genre Mapper processes track `genre` values. Standardize Genres separately match
 - Mapper rows use `regex=replacement`. Put specific rules first and keep `^.*$=Other` last. Lines beginning with `=` are comments. Add new input buckets to the mapper's **Existing bucket names** rule or give them an exact match.
 - Add aliases only when a raw artist tag should map to a different bucket. Keys are normalized as described above; for example, `traditional pop` uses `_ag_alias_traditionalpop`.
 - `Holiday` and `Other` are intentionally handled by `_ag_album_only` and `_ag_ignore`. Test both a release genre and an album-artist tag, then refresh the release.
-
-```text
-^vocal[- ]pop$=Vocal Pop
-```
 
 ## Troubleshooting
 

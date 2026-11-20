@@ -1,0 +1,8 @@
+title: Clear Artist Genre Cache
+script_language_version: '1.1'
+script: |
+  $noop(Run manually on selected releases and then refresh to rebuild their artist genre cache.)
+  $foreach(%musicbrainz_albumartistid%,
+    $unset_s(ag_vote_v1_%_loop_value%)
+  )
+id: bc7bb315-b210-48b7-8aef-e5b0ba484e7e
