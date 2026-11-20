@@ -1,6 +1,6 @@
 # Standardize genres in MusicBrainz Picard
 
-Map MusicBrainz genres to consistent labels and write the result to every track in a matched release. This setup uses Picard 3.0.5 and the files below.
+Map MusicBrainz genres consistently across Albums and Album Artists.
 
 | File | Where it goes |
 | --- | --- |
@@ -45,6 +45,7 @@ Edit the settings at the top of **Configure Genres**. All script configuration i
 | Setting | Default and how to use it |
 | --- | --- |
 | `_ag_cache_artist` | `1` caches results by artist MBID when no recognized artist tags are available; use `0` to use each release's votes. Restart Picard to clear the cache. |
+| `_ag_first_release_artist` | `1` uses only the first release artist for genre lookup (more consistent); use `0` to use all release artist genres |
 | `_ag_limit` | `3` limits the final list after deduplication and parent removal. This is separate from Picard's input maximum. |
 | `_ag_album_only` | `Holiday` is appended after the limit and excluded from the artist cache. |
 | `_ag_ignore` | `Other` is excluded from matching and ordinary votes, then used as a last resort. |
@@ -71,6 +72,5 @@ Genre Mapper processes track `genre` values. Standardize Genres separately match
 | Artist overrides do not apply | Confirm Additional Artists Variables exposes `%_artists_album_primary_tags%`, the release has one album artist, and the raw tag appears in `ag_artist_tags`. |
 | No new result appears | Confirm both scripts are enabled and ordered correctly. In **Plugins → View persistent variables**, check `ag_tracks`, `ag_labels`, and `ag_final`. |
 | Changes have no effect | Refresh the release. Restart Picard to clear the artist cache, or set `_ag_cache_artist` to `0` while testing. |
-| Multiple genres arrive as one value | Leave **Join multiple genres with** blank and repaste the plain-text mapper rules with regex mode enabled. |
 
 [Persistent Variables inspection and cache behavior](https://picard-plugins-user-guides.readthedocs.io/en/latest/persistent_variables/user_guide.html)
