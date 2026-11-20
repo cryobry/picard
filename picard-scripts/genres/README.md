@@ -40,7 +40,7 @@ Open **Options → Options… → Plugins → Install Plugin…** and install th
 
 ## 4. Edit Configure Genres
 
-Edit the settings at the top of **Configure Genres**. Leave the collection logic below them unchanged unless you are modifying the script.
+Edit the settings at the top of **Configure Genres**. All script configuration is there; you normally do not need to edit **Standardize Genres**. Leave the collection logic below the settings unchanged unless you are modifying the script.
 
 | Setting | Default and how to use it |
 | --- | --- |

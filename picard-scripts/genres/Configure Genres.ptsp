@@ -6,6 +6,9 @@ script: |
   $noop(Set to 1 to reuse the cached artist genres when a release has no recognized artist tags. Set to 0 to let each release fall back to its own track votes.)
   $set(_ag_cache_artist,1)
 
+  $noop(Set to 1 to use the first release artist for genre matching and caching even on joint releases. Set to 0 to use release votes on joint releases.)
+  $set(_ag_first_release_artist,1)
+
   $noop(Keep these genres specific to the release. If any track has Holiday it is appended after standardization and stays out of the artist cache.)
   $setmulti(_ag_album_only,Holiday)
 
@@ -73,4 +76,4 @@ script: |
     $if($and(%_artists_album_primary_tags%,$not($get_a(ag_artist_tags))),
       $set_a(ag_artist_tags,%_artists_album_primary_tags%))
   )
-id: e0f3f7c7-dd77-4689-a512-e5c0fc75b6d7
+id: 48ab69a5-9ecb-4402-9ee7-843477db657c
