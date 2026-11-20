@@ -1,0 +1,64 @@
+title: Standardize Genres
+script_language_version: '1.1'
+script: |
+  $noop(Finish once per release after Configure Genres has counted all tracks.)
+  $if($and(%musicbrainz_albumid%,%_totalalbumtracks%,$eq($get_a(ag_tracks),%_totalalbumtracks%)),
+    $if($not($get_a(ag_finished)),
+      $unset(_ag_artist)
+      $unset(_ag_rank)
+      $unset(_ag_extra)
+      $unset(_ag_ignored)
+      $unset(_ag_cache_key)
+      $set(_ag_peak,0)
+
+      $noop(Prefer mapped artist tags for releases credited to one identified artist.)
+      $if($and(%musicbrainz_albumartistid%,$eq($lenmulti(%musicbrainz_albumartistid%),1),$ne(%musicbrainz_albumartistid%,89ad4ac3-39f7-470e-963a-56509c546377)),
+        $set(_ag_cache_key,ag_vote_v1_%musicbrainz_albumartistid%)
+        $foreach(%_ag_buckets%,
+          $set(_ag_name_$rreplace($lower(%_loop_value%),[ -],),%_loop_value%))
+        $foreach($get_a(ag_artist_tags),
+          $set(_ag_key,$rreplace($lower($trim(%_loop_value%)),[ -],))
+          $setmulti(_ag_match,$if2($get(_ag_alias_%_ag_key%),$get(_ag_name_%_ag_key%)))
+          $foreach(%_ag_match%,
+            $if($not($or($inmulti(%_ag_album_only%,%_loop_value%),$inmulti(%_ag_ignore%,%_loop_value%))),
+              $set(_ag_label,%_loop_value%)$copymerge(_ag_artist,_ag_label)))
+        ,;)
+      )
+
+      $noop(Rank by track count with alphabetical ties. Separate album-only and ignored labels.)
+      $foreach($get_a(ag_labels),
+        $set(_ag_label,%_loop_value%)
+        $if($inmulti(%_ag_album_only%,%_ag_label%),$copymerge(_ag_extra,_ag_label),
+          $if($inmulti(%_ag_ignore%,%_ag_label%),$copymerge(_ag_ignored,_ag_label),
+            $set(_ag_votes,$get_a(ag_votes_%_ag_label%))
+            $set(_ag_peak,$max(int,%_ag_peak%,%_ag_votes%))
+            $set(_ag_entry,$num($sub(%_totalalbumtracks%,%_ag_votes%),$len(%_totalalbumtracks%))|%_ag_label%)
+            $copymerge(_ag_rank,_ag_entry)))
+      )
+      $setmulti(_ag_candidates,$if2(%_ag_artist%,$if($and(%_ag_cache_key%,$eq(%_ag_cache_artist%,1)),$get_s(%_ag_cache_key%))))
+      $if($not(%_ag_candidates%),
+        $foreach($sortmulti(%_ag_rank%),
+          $set(_ag_label,$getmulti(%_loop_value%,1,|))
+          $if($gte($mul(2,$get_a(ag_votes_%_ag_label%)),%_ag_peak%),$copymerge(_ag_candidates,_ag_label)))
+      )
+
+      $noop(Remove redundant parents before applying the limit.)
+      $copy(_ag_result,_ag_candidates)
+      $foreach(%_ag_candidates%,
+        $set(_ag_parent,%_loop_value%)
+        $foreach(%_ag_candidates%,
+          $if($or($and($eq(%_ag_match_suffix%,1),$endswith(%_loop_value%, %_ag_parent%)),$and($inmulti(%_ag_prefix%,%_ag_parent%),$startswith(%_loop_value%,%_ag_parent% )),$inmulti($get(_ag_children_%_ag_parent%),%_loop_value%)),
+            $setmulti(_ag_result,$replacemulti(%_ag_result%,%_ag_parent%,))))
+      )
+      $setmulti(_ag_result,$slice(%_ag_result%,0,%_ag_limit%))
+      $if($and(%_ag_result%,%_ag_cache_key%,$eq(%_ag_cache_artist%,1)),$set_s(%_ag_cache_key%,%_ag_result%))
+      $copymerge(_ag_result,_ag_extra)
+      $if($not(%_ag_result%),$copy(_ag_result,_ag_ignored))
+      $set_a(ag_final,%_ag_result%)
+      $set_a(ag_finished,1)
+    )
+    $if($get_a(ag_final),$setmulti(genre,$get_a(ag_final)))
+  )
+  $noop(If only the file supplies a genre then copy its existing values as-is.)
+  $if($and(%genre%,$not($get_new(genre))),$copy(genre,genre))
+id: e7353ba3-0724-47f5-874f-6dd77bc4466b
