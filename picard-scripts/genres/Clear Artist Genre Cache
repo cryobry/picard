@@ -1,0 +1,4 @@
+$noop(Run manually on selected releases and then refresh to rebuild their artist genre cache.)
+$foreach(%musicbrainz_albumartistid%,
+  $unset_s(ag_vote_v1_%_loop_value%)
+)

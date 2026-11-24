@@ -1,0 +1,76 @@
+$noop(Run Configure Genres before Standardize Genres. Both scripts use the Persistent Variables plugin.)
+
+$noop(Set to 1 to reuse the cached artist genres when a release has no recognized artist tags. Set to 0 to let each release fall back to its own track votes.)
+$set(_ag_cache_artist,1)
+
+$noop(Set to 1 to use the first release artist for genre matching and caching even on joint releases. Set to 0 to use release votes on joint releases.)
+$set(_ag_first_release_artist,1)
+
+$noop(Keep these genres specific to the release. If any track has Holiday it is appended after standardization and stays out of the artist cache.)
+$setmulti(_ag_album_only,Holiday)
+
+$noop(Keep these labels out of artist matching and track rankings. Use them only if the release has no other genre result.)
+$setmulti(_ag_ignore,Other)
+
+$noop(Limit the standardized list after removing redundant parent genres. Album-only genres are appended after this limit.)
+$set(_ag_limit,3)
+
+$noop(Set to 1 to drop a parent when a selected genre ends with that parent as a separate word. For example Indie Rock makes Rock redundant.)
+$set(_ag_match_suffix,1)
+
+$noop(Also drop these parents when they appear at the start of a more specific selected genre. For example Indie Pop makes Indie redundant.)
+$setmulti(_ag_prefix,Alternative; Indie)
+
+$noop(Define additional parent-child relationships. The genre in each setting name is dropped when any genre in its list is also selected. For example Trance makes Electronic redundant.)
+$setmulti(_ag_children_Alternative,Grunge; Indie Rock)
+$setmulti(_ag_children_Alternative Rock,Grunge; Indie Rock; Shoegaze)
+$setmulti(_ag_children_Classical,Opera)
+$setmulti(_ag_children_Country,Bluegrass)
+$setmulti(_ag_children_Dance,Disco; House; Techno)
+$setmulti(_ag_children_Electronic,House; Synthpop; Techno; Trance; Trip-Hop)
+$setmulti(_ag_children_Hip Hop,Trap)
+$setmulti(_ag_children_Pop,Synthpop; Vocal Pop; Pop Rock)
+$setmulti(_ag_children_Rock,Grunge; Shoegaze; Pop Rock)
+$setmulti(_ag_children_World,African; Asian; Caribbean; Celtic; European; Latin; Scandinavian)
+
+$noop(List the standard genres that artist tags can match directly. Use the spelling and capitalization you want written to the genre tag.)
+$setmulti(_ag_buckets,African; Alternative; Alternative Country; Alternative Metal; Alternative R&B; Alternative Rock; Ambient; Americana; Art Pop; Asian; Band Music; Bluegrass; Blues; Blues Rock; Caribbean; Celtic; Classic Rock; Classical; Comedy; Country; Dance; Dark; Disco; Dream Pop; Easy Listening; Electronic; Emo; European; Experimental; Folk; Folk Rock; Funk; Grunge; Hard Rock; Hip Hop; House; Indie; Indie Pop; Indie Folk; Indie Rock; Industrial; Instrumental; Jazz; Kids; Latin; Lo-Fi; Math Rock; Metal; Musical; New Age; New Wave; Noise; Opera; Pop; Pop Rock; Progressive Rock; Psychedelic; Punk; R&B; Reggae; Religious; Rock; Scandinavian; Shoegaze; Singer-Songwriter; Ska; Soft Rock; Soul; Soundtrack; Spoken; Synthpop; Techno; Trance; Trap; Trip-Hop; Vocal; Vocal Pop; World)
+
+$noop(Map raw artist tags to one or more standard genres. Essentially a stripped-down version of our Genre Mapper for Album Artist genres.)
+$noop(Alias keys use lowercase with spaces and hyphens removed so cloud rap becomes cloudrap. Separate multiple output genres as shown for dancepop. An alias takes precedence over a direct bucket match.)
+$set(_ag_alias_hyperpop,Pop)
+$set(_ag_alias_alternativehiphop,Hip Hop)
+$set(_ag_alias_cloudrap,Hip Hop)
+$set(_ag_alias_boombap,Hip Hop)
+$set(_ag_alias_dancepop,Dance; Pop)
+$set(_ag_alias_drumandbass,Electronic)
+$set(_ag_alias_drum&bass,Electronic)
+$set(_ag_alias_dnb,Electronic)
+$set(_ag_alias_alternativefolk,Folk)
+$set(_ag_alias_alternativedance,Dance)
+$set(_ag_alias_alternativepop,Pop)
+$set(_ag_alias_altcountry,Alternative Country)
+$set(_ag_alias_contemporarycountry,Country)
+$set(_ag_alias_traditionalpop,Vocal Pop)
+
+$noop(Collect votes for Standardize Genres. The absolute track number spans all discs and lets the script count each release track once. Reloading the release resets these album variables.)
+$if($and(%musicbrainz_albumid%,%_absolutetracknumber%,$not($get_a(ag_seen_%_absolutetracknumber%))),
+  $set_a(ag_seen_%_absolutetracknumber%,1)
+  $noop(Count tracks with empty genres too so Standardize Genres can tell when collection is complete.)
+  $set_a(ag_tracks,$add($if2($get_a(ag_tracks),0),1))
+
+  $noop(Split mapped crossover genres into separate labels. Trim and deduplicate them so this track casts at most one vote per genre.)
+  $setmulti(_ag_ballot,$unique($map($get(genre),$trim(%_loop_value%),;),,;),;)
+  $cleanmulti(_ag_ballot)
+  $setmulti(_ag_seen,$get_a(ag_labels))
+  $foreach(%_ag_ballot%,
+    $set(_ag_label,%_loop_value%)
+    $copymerge(_ag_seen,_ag_label)
+    $set_a(ag_votes_%_ag_label%,$add($if2($get_a(ag_votes_%_ag_label%),0),1))
+  )
+  $set_a(ag_labels,%_ag_seen%)
+
+  $noop(Store the first nonempty album artist tag list for Standardize Genres.)
+  $if($and(%_artists_album_primary_tags%,$not($get_a(ag_artist_tags))),
+    $set_a(ag_artist_tags,%_artists_album_primary_tags%))
+)
